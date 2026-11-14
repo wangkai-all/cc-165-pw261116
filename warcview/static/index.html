@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WARC 本地检索与抽取</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>WARC 本地检索与抽取</h1>
+  <nav>
+    <button class="tab-btn active" data-tab="archives">档案</button>
+    <button class="tab-btn" data-tab="pages">页面</button>
+    <button class="tab-btn" data-tab="runs">抽取任务</button>
+  </nav>
+</header>
+<main>
+  <!-- ============ 档案 ============ -->
+  <section id="tab-archives">
+    <div class="toolbar">
+      <label class="upload-btn">上传档案(.warc / .warc.gz)
+        <input type="file" id="upload-input" hidden>
+      </label>
+      <button id="fixture-btn">生成示例档案</button>
+      <span id="upload-status" class="muted"></span>
+    </div>
+    <table class="grid" id="archives-table">
+      <thead><tr>
+        <th>ID</th><th>名称</th><th>大小</th><th>SHA-256</th><th>状态</th>
+        <th>扫描进度</th><th>记录</th><th>损坏</th><th>操作</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <div id="records-panel" hidden>
+      <h2>记录列表 <span id="records-archive-name" class="muted"></span></h2>
+      <div class="toolbar filters">
+        <input id="flt-url" placeholder="URL 包含…">
+        <select id="flt-type">
+          <option value="">全部类型</option>
+          <option value="response">response</option>
+          <option value="revisit">revisit</option>
+          <option value="error">error(损坏)</option>
+          <option value="warcinfo">warcinfo</option>
+        </select>
+        <select id="flt-status">
+          <option value="">全部状态</option>
+          <option value="ok">ok</option>
+          <option value="decode_error">decode_error</option>
+          <option value="corrupt">corrupt</option>
+        </select>
+        <label>从 <input type="datetime-local" id="flt-from"></label>
+        <label>到 <input type="datetime-local" id="flt-to"></label>
+        <button id="flt-apply">筛选</button>
+      </div>
+      <table class="grid" id="records-table">
+        <thead><tr>
+          <th>时间</th><th>类型</th><th>URL</th><th>状态</th>
+          <th>正文指纹</th><th>偏移</th><th>操作</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="pager">
+        <button id="rec-prev">上一页</button>
+        <span id="rec-page-info"></span>
+        <button id="rec-next">下一页</button>
+      </div>
+      <div id="record-detail" class="detail-box" hidden></div>
+    </div>
+  </section>
+
+  <!-- ============ 页面 ============ -->
+  <section id="tab-pages" hidden>
+    <div class="toolbar">
+      <select id="page-archive-select"></select>
+      <input id="url-search" placeholder="搜索 URL…">
+      <button id="url-search-btn">搜索</button>
+    </div>
+    <div class="columns">
+      <div class="col-left">
+        <h3>页面(URL)</h3>
+        <table class="grid" id="urls-table">
+          <thead><tr><th>URL</th><th>捕获</th><th>正文版本</th><th>时间范围</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="col-right">
+        <div id="captures-panel" hidden>
+          <h3>捕获时间线 <span id="captures-url" class="muted"></span></h3>
+          <p class="muted">勾选两条可比较字段变化;相同指纹表示正文一致,各自保留捕获时间。</p>
+          <table class="grid" id="captures-table">
+            <thead><tr>
+              <th></th><th>时间</th><th>类型</th><th>状态</th>
+              <th>正文指纹</th><th>偏移</th><th>操作</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+          <div class="toolbar">
+            <button id="compare-btn" disabled>比较选中版本</button>
+          </div>
+
+          <div class="extract-box">
+            <h3>数据抽取</h3>
+            <div class="toolbar filters">
+              <label>从 <input type="datetime-local" id="ex-from"></label>
+              <label>到 <input type="datetime-local" id="ex-to"></label>
+              <label><input type="checkbox" id="rule-title" checked> 标题</label>
+              <label><input type="checkbox" id="rule-tables" checked> 表格</label>
+            </div>
+            <div class="toolbar">
+              <input id="custom-fields" placeholder='自定义字段,如: 价格=价格</th><td>([\d.]+) (多个用逗号分隔)'>
+              <button id="run-extract">运行抽取</button>
+            </div>
+            <div id="run-result"></div>
+          </div>
+
+          <div id="compare-result"></div>
+          <div id="preview-panel" hidden>
+            <h3>版本预览 <span id="preview-meta" class="muted"></span></h3>
+            <div class="toolbar">
+              <button id="preview-source-btn">查看源码</button>
+              <button id="preview-close">关闭</button>
+            </div>
+            <iframe id="preview-frame" sandbox="" title="preview"></iframe>
+            <pre id="preview-source" hidden></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 抽取任务 ============ -->
+  <section id="tab-runs" hidden>
+    <table class="grid" id="runs-table">
+      <thead><tr>
+        <th>ID</th><th>档案</th><th>URL</th><th>时间范围</th><th>规则</th>
+        <th>结果数</th><th>执行次数</th><th>最近执行</th><th>操作</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div id="run-detail"></div>
+  </section>
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>
